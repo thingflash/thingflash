@@ -1,0 +1,6 @@
+.cursor/
+.vscode/
+.env
+.env.*
+.DS_Store
+dev/
