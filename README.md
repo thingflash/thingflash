@@ -1,7 +1,3 @@
-<p align="center">
-  <img src="https://raw.githubusercontent.com/thingflash/thingflash/main/images/thingflash_banner.png" alt="ThingFlash logo">
-</p>
-
 # ThingFlash
 
 <p align="center">

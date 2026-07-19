@@ -22,6 +22,5 @@ def test_help_shows_program_name() -> None:
 
 def test_no_args_is_help() -> None:
     result = runner.invoke(app, [])
-    # no_args_is_help renders help and exits with Typer's usage code (2).
     assert result.exit_code == 2
     assert "Usage" in result.stdout

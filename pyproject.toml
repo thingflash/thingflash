@@ -46,7 +46,7 @@ Repository = "https://github.com/thingflash/thingflash"
 Issues = "https://github.com/thingflash/thingflash/issues"
 
 [project.scripts]
-thingflash = "thingflash.cli.main:app"
+thingflash = "thingflash.cli.main:entrypoint"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/thingflash"]
