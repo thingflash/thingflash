@@ -1,0 +1,17 @@
+version: 2
+updates:
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+    groups:
+      dev-dependencies:
+        patterns: ["pytest*", "mypy", "ruff", "moto*", "*-stubs", "types-*"]
+      boto:
+        patterns: ["boto3", "botocore"]
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
