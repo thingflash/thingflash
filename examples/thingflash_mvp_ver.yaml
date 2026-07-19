@@ -1,0 +1,25 @@
+# thingflash.yaml — ThingFlash project manifest
+# Docs: https://github.com/thingflash/thingflash/blob/main/docs/manifest-reference.md
+apiVersion: thingflash.com/v1
+kind: IoTProject
+
+metadata:
+  name: greenhouse          # ← из вопроса init
+  environment: development  # development | staging | production
+
+aws:
+  region: ap-northeast-2    # ← из вопроса init
+  profile: default          # AWS credentials profile
+
+fleet:
+  thingType: esp32-sensor   # ← из вопроса init
+  groups:
+    - default
+  policies:
+    mode: least-privilege   # секьюрный дефолт, явно виден пользователю
+
+mqtt:
+  topics:
+    telemetry: devices/{thingName}/telemetry
+    status: devices/{thingName}/status
+    commands: devices/{thingName}/commands
