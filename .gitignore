@@ -4,3 +4,13 @@
 .env.*
 .DS_Store
 dev/
+.pypirc
+
+# build artifacts
+dist/
+build/
+*.egg-info/
+
+# virtual envs
+.venv*/
+venv/
