@@ -1,0 +1,25 @@
+# thingflash.yaml — ThingFlash project manifest
+# Docs: https://github.com/thingflash/thingflash/blob/main/docs/manifest-reference.md
+apiVersion: thingflash.com/v1
+kind: IoTProject
+
+metadata:
+  name: thingflash_robot_fleet
+  environment: production  # development | staging | production
+
+aws:
+  region: ap-northeast-2
+  profile: default
+
+fleet:
+  thingType: robot_fleet
+  groups:
+    - default
+  policies:
+    mode: least-privilege   # secure default, explicit for the user
+
+mqtt:
+  topics:
+    telemetry: devices/{thingName}/telemetry
+    status: devices/{thingName}/status
+    commands: devices/{thingName}/commands

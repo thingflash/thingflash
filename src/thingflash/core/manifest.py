@@ -6,8 +6,8 @@ from pathlib import Path
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
+from thingflash.core.constants import ENVIRONMENTS, MANIFEST_FILENAME
 from thingflash.core.errors import ManifestValidationError
-from thingflash.core.scaffold import ENVIRONMENTS, MANIFEST_FILENAME
 
 API_VERSION = "thingflash.com/v1"
 KIND = "IoTProject"
@@ -49,7 +49,7 @@ class Policies(_Base):
 
 
 class Fleet(_Base):
-    thingType: str  # noqa: N815 - matches the manifest YAML key
+    thingType: str
     groups: list[str] = Field(default_factory=lambda: ["default"])
     policies: Policies = Field(default_factory=Policies)
 
@@ -59,7 +59,7 @@ class MQTT(_Base):
 
 
 class Manifest(_Base):
-    apiVersion: str  # noqa: N815 - matches the manifest YAML key
+    apiVersion: str 
     kind: str
     metadata: Metadata
     aws: AWS

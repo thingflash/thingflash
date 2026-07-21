@@ -1,52 +1,23 @@
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
+from thingflash.core.constants import (
+    _MANIFEST_TEMPLATE,
+    _NAME_RE,
+    _REGION_RE,
+    DEFAULT_ENVIRONMENT,
+    DEFAULT_PROFILE,
+    DEFAULT_REGION,
+    DEFAULT_THING_TYPE,
+    ENVIRONMENTS,
+    GITIGNORE_ENTRY,
+    MANIFEST_FILENAME,
+    STATE_DIRNAME,
+)
 from thingflash.core.errors import AlreadyExistsError, ValidationError
-
-MANIFEST_FILENAME = "thingflash.yaml"
-STATE_DIRNAME = ".thingflash"
-GITIGNORE_ENTRY = ".thingflash/"
-
-DEFAULT_REGION = "us-east-1"
-DEFAULT_THING_TYPE = "sensor"
-DEFAULT_ENVIRONMENT = "development"
-DEFAULT_PROFILE = "default"
-ENVIRONMENTS = ("development", "staging", "production")
-
-_NAME_RE = re.compile(r"^[a-zA-Z0-9][a-zA-Z0-9_-]{0,62}$")
-_REGION_RE = re.compile(r"^[a-z]{2}-[a-z]+-\d$")
-
-_MANIFEST_TEMPLATE = """\
-# thingflash.yaml — ThingFlash project manifest
-# Docs: https://github.com/thingflash/thingflash/blob/main/docs/manifest-reference.md
-apiVersion: thingflash.com/v1
-kind: IoTProject
-
-metadata:
-  name: {name}
-  environment: {environment}  # development | staging | production
-
-aws:
-  region: {region}
-  profile: {profile}
-
-fleet:
-  thingType: {thing_type}
-  groups:
-    - default
-  policies:
-    mode: least-privilege   # secure default, explicit for the user
-
-mqtt:
-  topics:
-    telemetry: devices/{{thingName}}/telemetry
-    status: devices/{{thingName}}/status
-    commands: devices/{{thingName}}/commands
-"""
 
 
 @dataclass
