@@ -1,9 +1,3 @@
-"""Top-level project commands: init/doctor/validate/plan/apply/status/destroy.
-
-These attach directly to the root app via ``register``. Commands stay thin:
-gather input -> call core -> render. All AWS work is faked (local state) for now.
-"""
-
 from __future__ import annotations
 
 import os
@@ -15,7 +9,7 @@ import typer
 
 from thingflash.cli import output
 from thingflash.cli.common import ExitCode, ManifestOption, OutputFormat, OutputOption, YesOption
-from thingflash.core import doctor, executor, scaffold, state
+from thingflash.core import constants, doctor, executor, scaffold, state
 from thingflash.core.errors import ManifestValidationError
 from thingflash.core.manifest import Manifest, load_manifest
 from thingflash.core.scaffold import ProjectConfig
@@ -40,7 +34,7 @@ def init(
         None, "--environment", "-e", help="development | staging | production."
     ),
     profile: str = typer.Option(
-        scaffold.DEFAULT_PROFILE, "--profile", help="AWS credentials profile."
+        constants.DEFAULT_PROFILE, "--profile", help="AWS credentials profile."
     ),
     force: bool = typer.Option(False, "--force", help="Overwrite an existing thingflash.yaml."),
     yes: bool = YesOption,
@@ -57,22 +51,22 @@ def init(
         )
     if region is None:
         default_region = os.environ.get("AWS_REGION") or os.environ.get(
-            "AWS_DEFAULT_REGION", scaffold.DEFAULT_REGION
+            "AWS_DEFAULT_REGION", constants.DEFAULT_REGION
         )
         region = (
             typer.prompt("AWS region", default=default_region) if interactive else default_region
         )
     if thing_type is None:
         thing_type = (
-            typer.prompt("Default Thing type", default=scaffold.DEFAULT_THING_TYPE)
+            typer.prompt("Default Thing type", default=constants.DEFAULT_THING_TYPE)
             if interactive
-            else scaffold.DEFAULT_THING_TYPE
+            else constants.DEFAULT_THING_TYPE
         )
     if environment is None:
         environment = (
-            typer.prompt("Environment", default=scaffold.DEFAULT_ENVIRONMENT)
+            typer.prompt("Environment", default=constants.DEFAULT_ENVIRONMENT)
             if interactive
-            else scaffold.DEFAULT_ENVIRONMENT
+            else constants.DEFAULT_ENVIRONMENT
         )
 
     config = ProjectConfig(
@@ -86,9 +80,20 @@ def init(
     output.render_init_result(result, out)
 
 
-def doctor_cmd(out: OutputFormat = OutputOption) -> None:
-    """Check the local environment."""
-    checks = doctor.run_checks()
+def doctor_cmd(
+    profile: str | None = typer.Option(
+        None, "--profile", help="AWS profile to check (overrides the manifest)."
+    ),
+    region: str | None = typer.Option(
+        None, "--region", help="AWS region to check (overrides the manifest)."
+    ),
+    skip_aws: bool = typer.Option(
+        False, "--skip-aws", help="Skip the AWS credential and permission checks (offline)."
+    ),
+    out: OutputFormat = OutputOption,
+) -> None:
+    """Check the local environment and AWS credentials/permissions."""
+    checks = doctor.run_checks(profile=profile, region=region, skip_aws=skip_aws)
     output.render_doctor(checks, out)
     if doctor.has_failures(checks):
         raise typer.Exit(ExitCode.ERROR)

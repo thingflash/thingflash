@@ -36,6 +36,9 @@ It is **not** a Terraform replacement. It's a specialized layer for connected pr
 - **Batteries included** — device registry, certificate lifecycle, MQTT topics, telemetry pipelines, image upload, monitoring
 - **Automation-first** — every command is idempotent, non-interactive, and supports `--output json` for CI/CD and AI agents
 
+<img src="./images/8.svg" alt="ThingFlash Logo" width="1200">
+
+
 ## Who is it for?
 
 Developers and teams building connected products — from ESP32 microcontrollers to Raspberry Pi gateways, sensors, cameras, and robot fleets — who need a real cloud backend without becoming AWS IoT experts first.
@@ -60,6 +63,28 @@ telemetry:
 - ⭐ Star the [main repository](https://github.com/thingflash/thingflash) to follow progress
 - 💬 Open an [issue](https://github.com/thingflash/thingflash/issues) — feedback from real IoT teams shapes the roadmap
 - 📖 Read the [documentation](https://github.com/thingflash/thingflash/tree/main/docs)
+
+## Contributing
+
+Contributions are welcome! To get started:
+
+```bash
+# 1. Create and activate a virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# 2. Install the package in editable mode with dev dependencies
+pip install -e ".[dev]"
+
+# 3. Verify the CLI works
+thingflash --help
+
+# 4. Run the tests and linter
+python3 -m pytest        # Run tests
+python3 -m ruff check .  # Lint
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow.
 
 ## License
 

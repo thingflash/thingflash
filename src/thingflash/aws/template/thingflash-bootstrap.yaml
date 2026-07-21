@@ -1,0 +1,35 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: ThingFlash bootstrap permissions
+Parameters:
+  UserName:
+    Type: String
+    Description: IAM user to attach the ThingFlash policy to
+Resources:
+  ThingFlashPolicy:
+    Type: AWS::IAM::ManagedPolicy
+    Properties:
+      ManagedPolicyName: ThingFlashProvisioning
+      Users: [!Ref UserName]
+      PolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action:
+              - iot:CreateThing
+              - iot:CreateKeysAndCertificate
+              - iot:CreatePolicy
+              - iot:AttachPolicy
+              - iot:AttachThingPrincipal
+              - iot:DescribeEndpoint
+              - iam:CreateRole
+              - iam:GetRole
+              - iam:PassRole
+              - iam:AttachRolePolicy
+              - iam:PutRolePolicy
+              - s3:CreateBucket
+              - s3:PutObject
+              - dynamodb:CreateTable
+              - cloudformation:CreateStack
+              - cloudformation:DescribeStacks
+              - iam:SimulatePrincipalPolicy
+            Resource: "*"

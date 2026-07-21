@@ -3,10 +3,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+from thingflash.core.constants import APPLIED_FILENAME, STATE_DIRNAME
 from thingflash.core.planner import Resource
-from thingflash.core.scaffold import STATE_DIRNAME
-
-APPLIED_FILENAME = "applied.json"
 
 
 def _applied_path(root: Path) -> Path:
