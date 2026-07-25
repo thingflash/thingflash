@@ -36,7 +36,7 @@ It is **not** a Terraform replacement. It's a specialized layer for connected pr
 - **Batteries included** — device registry, certificate lifecycle, MQTT topics, telemetry pipelines, image upload, monitoring
 - **Automation-first** — every command is idempotent, non-interactive, and supports `--output json` for CI/CD and AI agents
 
-<img src="./images/8.svg" alt="ThingFlash Logo" width="1200">
+<img src="./images/8temp.svg" alt="ThingFlash Logo" width="1200">
 
 
 ## Who is it for?
