@@ -60,53 +60,21 @@ ThingFlash is for developers building connected products such as:
 The goal is to make AWS IoT infrastructure easier to create,
 understand, and automate.
 
-
-
-
-From an empty AWS account to a secure MQTT-connected device with telemetry flowing into a database — **in under 15 minutes**.
-
 ---
 
-## What is ThingFlash?
+## ThingFlash Structure
 
-ThingFlash is an open-source, opinionated CLI for provisioning and operating AWS IoT infrastructure. You describe your device fleet in a single version-controlled YAML manifest — ThingFlash safely creates and manages everything else.
+<img src="./images/structure.svg" alt="ThingFlash Logo" width="1200">
 
-It is **not** a Terraform replacement. It's a specialized layer for connected products that knows how IoT should be built:
-
-- **Secure by default** — one certificate per device, least-privilege IoT policies, topic access scoped by Thing name
-- **Plan before apply** — every change is previewed with security warnings; nothing touches your infrastructure silently
-- **Batteries included** — device registry, certificate lifecycle, MQTT topics, telemetry pipelines, image upload, monitoring
-- **Automation-first** — every command is idempotent, non-interactive, and supports `--output json` for CI/CD and AI agents
-
-<img src="https://r2storage.alidev.net/blog/8.svg" alt="ThingFlash Logo" width="1200">
-
-[![What is ?](https://r2storage.alidev.net/blog/8.svg)](https://github.com/user-attachments/assets/62cae7d1-f3ed-4791-8c8c-651294b28a64)
-
-
-## Who is it for?
-
-Developers and teams building connected products — from ESP32 microcontrollers to Raspberry Pi gateways, sensors, cameras, and robot fleets — who need a real cloud backend without becoming AWS IoT experts first.
-
-```yaml
-# thingflash.yaml — your entire IoT backend in one file
-fleet:
-  thingType: camera
-  policies:
-    mode: least-privilege
-
-telemetry:
-  rules:
-    - name: telemetry-to-dynamodb
-      source: devices/+/telemetry
-      destination:
-        type: dynamodb
-```
+---
 
 ## Get involved
 
 - ⭐ Star the [main repository](https://github.com/thingflash/thingflash) to follow progress
 - 💬 Open an [issue](https://github.com/thingflash/thingflash/issues) — feedback from real IoT teams shapes the roadmap
 - 📖 Read the [documentation](https://github.com/thingflash/thingflash/tree/main/docs)
+
+---
 
 ## Contributing
 
