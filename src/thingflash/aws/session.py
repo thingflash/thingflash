@@ -8,7 +8,6 @@ from botocore.exceptions import ProfileNotFound
 
 from thingflash.core.errors import ThingFlashError
 
-# Fail fast rather than block a `doctor` run for the default ~60s when offline.
 _CLIENT_CONFIG = Config(
     connect_timeout=3,
     read_timeout=5,
@@ -36,6 +35,12 @@ class SimulateNotAllowedError(ThingFlashError):
     """The caller lacks ``iam:SimulatePrincipalPolicy`` to self-check permissions."""
 
     code = "AWS_SIMULATE_DENIED"
+
+
+class IamWriteNotAllowedError(ThingFlashError):
+    """The caller lacks IAM write permissions to create/attach the policy."""
+
+    code = "AWS_IAM_WRITE_DENIED"
 
 
 def build_session(
@@ -70,5 +75,4 @@ def make_client(
 ) -> Any:
     """Return a boto3 client for ``service`` with ThingFlash's timeout config."""
     session = session or build_session(profile=profile, region=region)
-    # ``service`` is dynamic, so boto3-stubs' per-service Literal overloads don't apply.
     return session.client(service, config=_CLIENT_CONFIG)  # type: ignore[call-overload]

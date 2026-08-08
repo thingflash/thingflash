@@ -6,6 +6,7 @@
 dev/
 .pypirc
 
+docs/iam
 # build artifacts
 dist/
 build/

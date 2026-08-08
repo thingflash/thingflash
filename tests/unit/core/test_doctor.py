@@ -2,8 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from thingflash.aws.session import AWSUnavailableError, SimulateNotAllowedError
-from thingflash.aws.sts import Identity
+from thingflash.aws.session import (
+    AWSConfigError,
+    AWSUnavailableError,
+    IamWriteNotAllowedError,
+    SimulateNotAllowedError,
+)
+from thingflash.aws.sts import Identity, Principal
 from thingflash.core import doctor, scaffold
 from thingflash.core.scaffold import ProjectConfig
 
@@ -86,3 +91,69 @@ def test_doctor_offline_warns_not_fails(tmp_path: Path, monkeypatch: pytest.Monk
     assert checks["aws-identity"].status == doctor.WARN
     assert checks["aws-permissions"].status == doctor.WARN
     assert not doctor.has_failures(list(checks.values()))
+
+
+def test_permissions_denied_detects_failed_check() -> None:
+    denied = [doctor.Check("aws-permissions", doctor.FAIL, "2 denied")]
+    allowed = [doctor.Check("aws-permissions", doctor.OK, "all allowed")]
+    assert doctor.permissions_denied(denied)
+    assert not doctor.permissions_denied(allowed)
+
+
+def _patch_fix_env(monkeypatch: pytest.MonkeyPatch) -> dict[str, object]:
+    """Stub session/identity so fix_permissions never touches real AWS."""
+    monkeypatch.setattr(doctor, "build_session", lambda **k: object())
+    monkeypatch.setattr(doctor.sts, "get_caller_identity", _fake_identity)
+    calls: dict[str, object] = {}
+
+    def fake_ensure(session: object, name: str, doc: object, *, account: str) -> str:
+        calls["ensure"] = (name, account)
+        return f"arn:aws:iam::{account}:policy/{name}"
+
+    def fake_attach(session: object, principal: Principal, policy_arn: str) -> None:
+        calls["attach"] = (principal.type, principal.name, policy_arn)
+
+    monkeypatch.setattr(doctor.iam, "ensure_policy", fake_ensure)
+    monkeypatch.setattr(doctor.iam, "attach_policy", fake_attach)
+    return calls
+
+
+def test_fix_permissions_creates_and_attaches(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _init(tmp_path)
+    calls = _patch_fix_env(monkeypatch)
+    result = doctor.fix_permissions(tmp_path)
+    assert result.principal_type == "user"
+    assert result.principal_name == "alice"
+    assert result.policy_name == doctor.permissions.POLICY_NAME
+    assert result.policy_arn.endswith(doctor.permissions.POLICY_NAME)
+    assert calls["attach"] == ("user", "alice", result.policy_arn)
+
+
+def test_fix_permissions_unsupported_identity_raises(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _init(tmp_path)
+    _patch_fix_env(monkeypatch)
+
+    def root_identity(_session: object) -> Identity:
+        return Identity(account="123456789012", arn="arn:aws:iam::123456789012:root", user_id="X")
+
+    monkeypatch.setattr(doctor.sts, "get_caller_identity", root_identity)
+    with pytest.raises(AWSConfigError):
+        doctor.fix_permissions(tmp_path)
+
+
+def test_fix_permissions_propagates_write_denied(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _init(tmp_path)
+    _patch_fix_env(monkeypatch)
+
+    def deny(*_a: object, **_k: object) -> str:
+        raise IamWriteNotAllowedError("denied", hint="ask an admin")
+
+    monkeypatch.setattr(doctor.iam, "ensure_policy", deny)
+    with pytest.raises(IamWriteNotAllowedError):
+        doctor.fix_permissions(tmp_path)

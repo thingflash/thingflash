@@ -24,7 +24,7 @@ def test_load_valid_manifest(tmp_path: Path) -> None:
     manifest = load_manifest(_write(tmp_path, _valid_text(thing_type="esp32-sensor")))
     assert manifest.metadata.name == "greenhouse"
     assert manifest.aws.region == "ap-northeast-2"
-    assert manifest.fleet.thingType == "esp32-sensor"
+    assert manifest.fleet.thing_type == "esp32-sensor"
     assert manifest.fleet.policies.mode == "least-privilege"
 
 

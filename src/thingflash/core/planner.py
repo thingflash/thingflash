@@ -48,7 +48,7 @@ class Plan:
 def desired_resources(manifest: Manifest) -> list[Resource]:
     """Derive the set of resources the manifest asks for."""
     name = manifest.metadata.name
-    resources = [Resource("IoT::ThingType", manifest.fleet.thingType)]
+    resources = [Resource("IoT::ThingType", manifest.fleet.thing_type)]
     resources += [Resource("IoT::ThingGroup", group) for group in manifest.fleet.groups]
     resources.append(Resource("IoT::Policy", f"{name}-device-policy"))
     return resources
