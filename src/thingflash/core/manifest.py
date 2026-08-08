@@ -5,6 +5,7 @@ from pathlib import Path
 
 import yaml
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic.alias_generators import to_camel
 
 from thingflash.core.constants import ENVIRONMENTS, MANIFEST_FILENAME
 from thingflash.core.errors import ManifestValidationError
@@ -17,7 +18,8 @@ _REGION_RE = re.compile(r"^[a-z]{2}-[a-z]+-\d$")
 
 
 class _Base(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    # Manifest keys are camelCase, so every field is read under its camelCase alias.
+    model_config = ConfigDict(extra="forbid", alias_generator=to_camel)
 
 
 class Metadata(_Base):
@@ -49,7 +51,7 @@ class Policies(_Base):
 
 
 class Fleet(_Base):
-    thingType: str
+    thing_type: str
     groups: list[str] = Field(default_factory=lambda: ["default"])
     policies: Policies = Field(default_factory=Policies)
 
@@ -59,14 +61,14 @@ class MQTT(_Base):
 
 
 class Manifest(_Base):
-    apiVersion: str 
+    api_version: str
     kind: str
     metadata: Metadata
     aws: AWS
     fleet: Fleet
     mqtt: MQTT = Field(default_factory=MQTT)
 
-    @field_validator("apiVersion")
+    @field_validator("api_version")
     @classmethod
     def _check_api_version(cls, value: str) -> str:
         if value != API_VERSION:

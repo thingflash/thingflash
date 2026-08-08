@@ -26,3 +26,37 @@ def test_get_caller_identity_no_credentials_raises_unavailable(
     monkeypatch.setattr(sts, "make_client", lambda service, **k: _Client())
     with pytest.raises(AWSUnavailableError):
         sts.get_caller_identity(session=None)  # type: ignore[arg-type]
+
+
+def test_parse_principal_user() -> None:
+    principal = sts.parse_principal("arn:aws:iam::123456789012:user/alice")
+    assert principal is not None
+    assert principal.type == "user"
+    assert principal.name == "alice"
+
+
+def test_parse_principal_user_with_path() -> None:
+    principal = sts.parse_principal("arn:aws:iam::123456789012:user/team/bob")
+    assert principal is not None
+    assert principal.type == "user"
+    assert principal.name == "bob"
+
+
+def test_parse_principal_assumed_role() -> None:
+    principal = sts.parse_principal(
+        "arn:aws:sts::123456789012:assumed-role/DeployRole/session-42"
+    )
+    assert principal is not None
+    assert principal.type == "role"
+    assert principal.name == "DeployRole"
+
+
+def test_parse_principal_role() -> None:
+    principal = sts.parse_principal("arn:aws:iam::123456789012:role/DeployRole")
+    assert principal is not None
+    assert principal.type == "role"
+    assert principal.name == "DeployRole"
+
+
+def test_parse_principal_unsupported_returns_none() -> None:
+    assert sts.parse_principal("arn:aws:iam::123456789012:root") is None

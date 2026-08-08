@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import boto3
 from botocore.exceptions import (
     ClientError,
@@ -9,12 +11,14 @@ from botocore.exceptions import (
 
 from thingflash.aws.session import (
     AWSUnavailableError,
+    IamWriteNotAllowedError,
     SimulateNotAllowedError,
     make_client,
 )
+from thingflash.aws.sts import Principal
 
-# Evaluation decisions that mean the action is permitted.
 _ALLOWED_DECISIONS = {"allowed"}
+_WRITE_DENIED_CODES = {"AccessDenied", "AccessDeniedException"}
 
 
 def simulate(
@@ -67,3 +71,77 @@ def simulate(
             ) from exc
         raise
     return results
+
+
+def ensure_policy(
+    session: boto3.session.Session,
+    name: str,
+    document: dict[str, object],
+    *,
+    account: str,
+) -> str:
+    """Create the managed policy ``name`` and return its ARN.
+
+    If a policy with that name already exists it is left untouched and its ARN
+    is returned, so re-running ``doctor --fix`` is idempotent.
+
+    Raises :class:`IamWriteNotAllowedError` if the caller lacks IAM write
+    permissions, and :class:`AWSUnavailableError` when offline or credential-less.
+    """
+    client = make_client("iam", session=session)
+    arn = f"arn:aws:iam::{account}:policy/{name}"
+    try:
+        resp = client.create_policy(PolicyName=name, PolicyDocument=json.dumps(document))
+        return str(resp["Policy"]["Arn"])
+    except NoCredentialsError as exc:
+        raise _offline_error() from exc
+    except EndpointConnectionError as exc:
+        raise _offline_error() from exc
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code", "")
+        if code == "EntityAlreadyExists":
+            return arn
+        if code in _WRITE_DENIED_CODES:
+            raise _write_denied_error("iam:CreatePolicy") from exc
+        raise
+
+
+def attach_policy(
+    session: boto3.session.Session, principal: Principal, policy_arn: str
+) -> None:
+    """Attach ``policy_arn`` to the user or role ``principal``.
+
+    Attaching an already-attached policy is a no-op on the AWS side, so this is
+    safe to re-run. Raises the same errors as :func:`ensure_policy`.
+    """
+    client = make_client("iam", session=session)
+    try:
+        if principal.type == "user":
+            client.attach_user_policy(UserName=principal.name, PolicyArn=policy_arn)
+        else:
+            client.attach_role_policy(RoleName=principal.name, PolicyArn=policy_arn)
+    except NoCredentialsError as exc:
+        raise _offline_error() from exc
+    except EndpointConnectionError as exc:
+        raise _offline_error() from exc
+    except ClientError as exc:
+        code = exc.response.get("Error", {}).get("Code", "")
+        if code in _WRITE_DENIED_CODES:
+            action = "iam:AttachUserPolicy" if principal.type == "user" else "iam:AttachRolePolicy"
+            raise _write_denied_error(action) from exc
+        raise
+
+
+def _offline_error() -> AWSUnavailableError:
+    return AWSUnavailableError(
+        "Could not reach AWS IAM (offline?).",
+        hint="Check your network connection and try again.",
+    )
+
+
+def _write_denied_error(action: str) -> IamWriteNotAllowedError:
+    return IamWriteNotAllowedError(
+        f"Not allowed to modify IAM: caller lacks {action}.",
+        hint="Ask an administrator to attach the ThingFlash policy "
+        "(see `thingflash permissions`).",
+    )

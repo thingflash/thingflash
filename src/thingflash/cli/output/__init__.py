@@ -87,6 +87,52 @@ def render_doctor(checks: Any, fmt: OutputFormat) -> None:
     console.print(table)
 
 
+def render_permissions(document: dict[str, Any], policy_name: str, fmt: OutputFormat) -> None:
+    """Print the IAM policy document and copy-paste commands to attach it.
+
+    In JSON mode only the raw policy is emitted on stdout, so it pipes cleanly
+    into a file (e.g. `thingflash permissions -o json > policy.json`).
+    """
+    if fmt == OutputFormat.json:
+        print(json.dumps(document, indent=2))
+        return
+
+    console.print(
+        f"[bold]Attach these permissions to your IAM identity[/bold] "
+        f"(policy: [cyan]{policy_name}[/cyan])\n"
+    )
+    console.print("[dim]# 1. Save the policy document[/dim]")
+    console.print(f"thingflash permissions -o json > {policy_name}.json\n")
+    console.print("[dim]# 2. Create the policy and attach it to your user (or role)[/dim]")
+    console.print(
+        f"aws iam create-policy --policy-name {policy_name} "
+        f"--policy-document file://{policy_name}.json"
+    )
+    console.print(
+        f"aws iam attach-user-policy --user-name <your-user> "
+        f"--policy-arn arn:aws:iam::<account-id>:policy/{policy_name}\n"
+    )
+    console.print("[dim]Policy document:[/dim]")
+    console.print(json.dumps(document, indent=2))
+    console.print(
+        "\n[dim]Tip: `thingflash doctor --fix` does steps 1-2 for you "
+        "if you have IAM write access.[/dim]"
+    )
+
+
+def render_permission_fix(fix: Any, fmt: OutputFormat) -> None:
+    """Report the result of `thingflash doctor --fix`."""
+    if fmt == OutputFormat.json:
+        render(fix, fmt)
+        return
+    console.print(
+        f"[bold green]Attached[/bold green] policy [cyan]{fix.policy_name}[/cyan] "
+        f"to {fix.principal_type} [bold]{fix.principal_name}[/bold]."
+    )
+    console.print(f"  [dim]{fix.policy_arn}[/dim]")
+    console.print("\nRe-run [cyan]thingflash doctor[/cyan] to confirm all checks pass.")
+
+
 def render_plan(plan: Any, fmt: OutputFormat) -> None:
     if fmt == OutputFormat.json:
         render(plan, fmt)

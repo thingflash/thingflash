@@ -7,10 +7,11 @@ from pathlib import Path
 
 import typer
 
+from thingflash.aws import permissions
 from thingflash.cli import output
 from thingflash.cli.common import ExitCode, ManifestOption, OutputFormat, OutputOption, YesOption
 from thingflash.core import constants, doctor, executor, scaffold, state
-from thingflash.core.errors import ManifestValidationError
+from thingflash.core.errors import ManifestValidationError, ThingFlashError
 from thingflash.core.manifest import Manifest, load_manifest
 from thingflash.core.scaffold import ProjectConfig
 
@@ -19,6 +20,7 @@ def register(app: typer.Typer) -> None:
     """Attach project-level commands to the root Typer app."""
     app.command("init", help="Scaffold a new ThingFlash project in the current directory.")(init)
     app.command("doctor", help="Check your environment and report problems.")(doctor_cmd)
+    app.command("permissions", help="Print the IAM policy ThingFlash needs.")(permissions_cmd)
     app.command("validate", help="Validate the manifest.")(validate_cmd)
     app.command("plan", help="Show what apply would change (no changes made).")(plan_cmd)
     app.command("apply", help="Apply the manifest (fake: records to local state).")(apply_cmd)
@@ -90,13 +92,46 @@ def doctor_cmd(
     skip_aws: bool = typer.Option(
         False, "--skip-aws", help="Skip the AWS credential and permission checks (offline)."
     ),
+    fix: bool = typer.Option(
+        False,
+        "--fix",
+        help="Create and attach the required IAM policy to your identity if any are missing.",
+    ),
+    yes: bool = YesOption,
     out: OutputFormat = OutputOption,
 ) -> None:
     """Check the local environment and AWS credentials/permissions."""
     checks = doctor.run_checks(profile=profile, region=region, skip_aws=skip_aws)
     output.render_doctor(checks, out)
+
+    if fix and doctor.permissions_denied(checks):
+        _fix_permissions(profile=profile, region=region, yes=yes, out=out)
+        return
+
     if doctor.has_failures(checks):
         raise typer.Exit(ExitCode.ERROR)
+
+
+def _fix_permissions(
+    *, profile: str | None, region: str | None, yes: bool, out: OutputFormat
+) -> None:
+    """Confirm, then create and attach the ThingFlash IAM policy."""
+    output.confirm_or_exit(
+        f"Create and attach the '{permissions.POLICY_NAME}' policy to your IAM identity?",
+        yes=yes,
+    )
+    try:
+        fix_result = doctor.fix_permissions(profile=profile, region=region)
+    except ThingFlashError as exc:
+        output.error(exc)
+        raise typer.Exit(ExitCode.ERROR) from exc
+    output.render_permission_fix(fix_result, out)
+
+
+def permissions_cmd(out: OutputFormat = OutputOption) -> None:
+    """Print the least-privilege IAM policy ThingFlash requires."""
+    document = permissions.build_policy_document()
+    output.render_permissions(document, permissions.POLICY_NAME, out)
 
 
 def validate_cmd(

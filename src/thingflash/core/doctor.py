@@ -41,6 +41,16 @@ class _AwsTarget:
     region: str | None
 
 
+@dataclass
+class PermissionFix:
+    """Outcome of attaching the ThingFlash policy to the caller."""
+
+    principal_type: str
+    principal_name: str
+    policy_name: str
+    policy_arn: str
+
+
 def run_checks(
     root: Path | None = None,
     *,
@@ -65,6 +75,53 @@ def run_checks(
 
 def has_failures(checks: list[Check]) -> bool:
     return any(c.status == FAIL for c in checks)
+
+
+def permissions_denied(checks: list[Check]) -> bool:
+    """True if the AWS permission check failed (missing required actions)."""
+    return any(c.name == "aws-permissions" and c.status == FAIL for c in checks)
+
+
+def fix_permissions(
+    root: Path | None = None,
+    *,
+    profile: str | None = None,
+    region: str | None = None,
+) -> PermissionFix:
+    """Create the ThingFlash managed policy and attach it to the caller.
+
+    Resolves profile/region the same way :func:`run_checks` does, then creates
+    (idempotently) and attaches the least-privilege policy built from
+    ``permissions.REQUIRED_ACTIONS``.
+
+    Raises :class:`AWSConfigError` if the identity cannot take a direct policy
+    attachment, :class:`IamWriteNotAllowedError` if the caller lacks IAM write
+    permissions, and :class:`AWSUnavailableError` when offline/credential-less.
+    """
+    root = root or Path.cwd()
+    manifest, _ = _check_manifest(root)
+    target = _resolve_aws_target(manifest, profile, region)
+
+    session = build_session(profile=target.profile, region=target.region)
+    identity = sts.get_caller_identity(session)
+    principal = sts.parse_principal(identity.arn)
+    if principal is None:
+        raise AWSConfigError(
+            f"Cannot attach a policy to this identity: {_short_arn(identity.arn)}.",
+            hint="Attach the ThingFlash policy manually (see `thingflash permissions`).",
+        )
+
+    document = permissions.build_policy_document()
+    policy_arn = iam.ensure_policy(
+        session, permissions.POLICY_NAME, document, account=identity.account
+    )
+    iam.attach_policy(session, principal, policy_arn)
+    return PermissionFix(
+        principal_type=principal.type,
+        principal_name=principal.name,
+        policy_name=permissions.POLICY_NAME,
+        policy_arn=policy_arn,
+    )
 
 
 def _check_python() -> Check:
@@ -159,7 +216,8 @@ def _check_aws_permissions(
             "aws-permissions",
             FAIL,
             f"{len(denied)} required action(s) denied: {preview}{suffix}",
-            hint="Attach the missing permissions to your IAM identity.",
+            hint="Run `thingflash permissions` for a ready-to-attach policy, "
+            "or `thingflash doctor --fix` to attach it automatically.",
         )
     return Check("aws-permissions", OK, f"all {len(results)} required actions allowed")
 
