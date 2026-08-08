@@ -7,11 +7,14 @@
   <a href="https://aws.amazon.com/iot-core/"><img src="https://img.shields.io/badge/AWS-IoT%20Core-232F3E?logo=amazonaws&logoColor=white" alt="AWS IoT Core"></a>
 </p>
 
-**Production-ready AWS IoT infrastructure in three commands.**
+**Connect physical devices to AWS IoT Core in minutes.**
 
-Building an IoT backend on AWS means wiring together 15+ services — IoT Core, X.509 certificates, IoT policies, Device Shadows, Rules, Lambda, S3, DynamoDB, CloudWatch — and getting the security right on every one of them.
+ThingFlash is a CLI tool for provisioning AWS IoT infrastructure and
+connecting physical devices to AWS IoT Core using a simple declarative workflow.
 
-ThingFlash compresses that into a declarative workflow:
+Instead of manually configuring IoT Things, certificates, policies,
+IAM roles, storage, and rules across multiple AWS services, describe
+what you need in `thingflash.yaml` and let ThingFlash plan and apply it.
 
 ```bash
 pipx install thingflash
@@ -20,6 +23,45 @@ thingflash init
 thingflash plan
 thingflash apply
 ```
+
+> 🚧 ThingFlash is currently in early development.
+
+---
+
+## Why ThingFlash?
+
+Connecting a physical device to AWS IoT usually requires configuring
+multiple AWS resources:
+
+- IoT Things and Thing Types
+- X.509 certificates
+- IoT policies
+- Thing Groups
+- IAM roles
+- IoT Rules
+- S3 and DynamoDB
+- IoT Jobs
+
+ThingFlash provides one workflow for managing them.
+
+---
+
+## Who is it for?
+
+ThingFlash is for developers building connected products such as:
+
+- ESP32 and other microcontrollers
+- Raspberry Pi devices
+- sensors
+- cameras
+- gateways
+- robotics and IoT fleets
+
+The goal is to make AWS IoT infrastructure easier to create,
+understand, and automate.
+
+
+
 
 From an empty AWS account to a secure MQTT-connected device with telemetry flowing into a database — **in under 15 minutes**.
 
@@ -36,7 +78,9 @@ It is **not** a Terraform replacement. It's a specialized layer for connected pr
 - **Batteries included** — device registry, certificate lifecycle, MQTT topics, telemetry pipelines, image upload, monitoring
 - **Automation-first** — every command is idempotent, non-interactive, and supports `--output json` for CI/CD and AI agents
 
-<img src="./images/8.svg" alt="ThingFlash Logo" width="1200">
+<img src="https://r2storage.alidev.net/blog/8.svg" alt="ThingFlash Logo" width="1200">
+
+[![What is ?](https://r2storage.alidev.net/blog/8.svg)](https://github.com/user-attachments/assets/62cae7d1-f3ed-4791-8c8c-651294b28a64)
 
 
 ## Who is it for?
